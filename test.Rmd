@@ -2,7 +2,9 @@
 title: "test"
 author: "SRK"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: 
+  html_document: 
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
