@@ -1,0 +1,100 @@
+---
+title: "test"
+author: "SRK"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    toc: yes
+---
+
+Set up options for knitting the Rmarkdown file:
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(base.dir = "~/courses/Ecological_Genomics_24/population_genomics/doc")
+```
+
+## Import vcf file using vcfR
+
+We can use vcfR to bring our VCF file in, plot some basic summary stats, and convert to other file formats. 
+
+```{r, echo=F}
+library(vcfR)
+```
+
+## Bring in the vcf, gff, and reference genome (FASTA) data
+
+Note that Rmarkdown does not use setwd() so it's best practice to include the paths explicitly in your code. This can be made easier by setting the root of the directory to a variable (path) and then adding that to the data imports.
+
+
+```{r}
+datapath="/netfiles/ecogen/PopulationGenomics/"
+dna <- ape::read.dna(paste0(datapath,"reference/GCA_030169165.1_ASM3016916v1_genomic.fa.gz"), format = "fasta")
+gff <- read.table(paste0(datapath,"reference/GCA_030169165.1_ASM3016916v1_genomic_genes.gff.gz"), sep="\t", quote="")
+```
+
+Bring in vcf data and subset for chr1
+
+```{r}
+vcf1 <- read.vcfR(paste0(datapath,"variants/Centaurea_Allsamples_Csols_bcftools_poly_mac5_sitemiss50pct_indvmiss_75pct_CM058040.1.recode.vcf.gz"))
+dna1 <- dna[grep( "CM058040.1", names(dna) ) ]
+names(dna1) <- "CM058040.1"
+dna1 <- as.matrix(dna1)
+
+gff1 <- gff[grep("CM058040.1", gff[,1]),]
+```
+
+Or chr2
+```{r}
+vcf2 <- read.vcfR(paste0(datapath,"variants/Centaurea_Allsamples_Csols_bcftools_poly_mac5_sitemiss50pct_indvmiss_75pct_CM058041.1.recode.vcf.gz"))
+
+dna2 <- dna[grep( "CM058041.1", names(dna) ) ]
+names(dna2) <- "CM058041.1"
+dna2 <- as.matrix(dna2)
+
+gff2 <- gff[grep("CM058041.1", gff[,1]),]
+```
+
+
+## Create a chromR object:
+```{r}
+chrom1 <- create.chromR(name="Chr1", vcf=vcf1, seq=dna1, ann=gff1, verbose=TRUE)
+chrom1
+plot(chrom1)
+```
+
+or, looking at just chr2 now...
+```{r}
+chrom2 <- create.chromR(name="Chr2", vcf=vcf2, seq=dna2, ann=gff2, verbose=TRUE)
+chrom2
+plot(chrom2)
+```
+
+```{r, echo=F}
+chrom1 <- proc.chromR(chrom1, verbose = TRUE)
+
+chromoqc(chrom1)
+
+```
+<!--head(chrom@var.info)
+
+
+<!--queryMETA(vcf, element = 'FORMAT.+DP')
+
+<!--plot(chrom@var.info$DP,chrom@var.info$He)
+
+
+<!--vcf@gt[1:4,1:4]
+
+<!-- dp <- extract.gt(vcf, element = "DP", as.numeric=TRUE) -->
+<!-- dim(dp) -->
+
+<!-- myMiss <- apply(dp, MARGIN = 2, function(x){ sum(is.na(x)) }) -->
+<!-- myMiss <- myMiss/nrow(vcf) -->
+
+<!-- library(RColorBrewer) -->
+<!-- palette(brewer.pal(n=12, name = 'Set3')) -->
+
+<!-- par(mar = c(12,4,4,2)) -->
+<!-- barplot(myMiss, las = 2, col = 1:100) -->
+<!-- title(ylab = "Missingness (%)") -->

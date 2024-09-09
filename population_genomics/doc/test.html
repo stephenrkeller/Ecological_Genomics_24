@@ -11,7 +11,7 @@
 
 <meta name="author" content="SRK" />
 
-<meta name="date" content="2024-08-27" />
+<meta name="date" content="2024-09-08" />
 
 <title>test</title>
 
@@ -352,43 +352,172 @@ display: none;
 
 <h1 class="title toc-ignore">test</h1>
 <h4 class="author">SRK</h4>
-<h4 class="date">2024-08-27</h4>
+<h4 class="date">2024-09-08</h4>
 
 </div>
 
 <div id="TOC">
 <ul>
-<li><a href="#r-markdown" id="toc-r-markdown">R Markdown</a></li>
-<li><a href="#including-plots" id="toc-including-plots">Including
-Plots</a></li>
+<li><a href="#import-vcf-file-using-vcfr" id="toc-import-vcf-file-using-vcfr">Import vcf file using vcfR</a></li>
+<li><a href="#bring-in-the-vcf-gff-and-reference-genome-fasta-data" id="toc-bring-in-the-vcf-gff-and-reference-genome-fasta-data">Bring in
+the vcf, gff, and reference genome (FASTA) data</a></li>
+<li><a href="#create-a-chromr-object" id="toc-create-a-chromr-object">Create a chromR object:</a></li>
 </ul>
 </div>
 
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
-<p>This is an R Markdown document. Markdown is a simple formatting
-syntax for authoring HTML, PDF, and MS Word documents. For more details
-on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
-<p>When you click the <strong>Knit</strong> button a document will be
-generated that includes both content as well as the output of any
-embedded R code chunks within the document. You can embed an R code
-chunk like this:</p>
-<pre class="r"><code>summary(cars)</code></pre>
-<pre><code>##      speed           dist       
-##  Min.   : 4.0   Min.   :  2.00  
-##  1st Qu.:12.0   1st Qu.: 26.00  
-##  Median :15.0   Median : 36.00  
-##  Mean   :15.4   Mean   : 42.98  
-##  3rd Qu.:19.0   3rd Qu.: 56.00  
-##  Max.   :25.0   Max.   :120.00</code></pre>
+<p>Set up options for knitting the Rmarkdown file:</p>
+<div id="import-vcf-file-using-vcfr" class="section level2">
+<h2>Import vcf file using vcfR</h2>
+<p>We can use vcfR to bring our VCF file in, plot some basic summary
+stats, and convert to other file formats.</p>
+<pre><code>## 
+##    *****       ***   vcfR   ***       *****
+##    This is vcfR 1.15.0 
+##      browseVignettes(&#39;vcfR&#39;) # Documentation
+##      citation(&#39;vcfR&#39;) # Citation
+##    *****       *****      *****       *****</code></pre>
 </div>
-<div id="including-plots" class="section level2">
-<h2>Including Plots</h2>
-<p>You can also embed plots, for example:</p>
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUAAAAPACAMAAADDuCPrAAAABlBMVEUAAAD///+l2Z/dAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAcPUlEQVR4nO3d23qbShaFUfn9X7q/3UlscZJhUqJqoTEuOo5swWoM/9YBlMcXAJFH7wEAqhJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoQEFCAkoAAhAQUICShASEABQgIKEBJQgJCAAoTGDugDoJ3miWq9wJZ6b2zgXpo3qvUCW2r/fxf4XOUCeq78Agq0Uyugpx89CyjQTqWANngBQkCBdgoFdF7MpKACCrRTLKC/3fL7MtrNA3y6OgFdq+Xhggoo0E6pgO688eVCGk0DIKAAKQEFCJUKqNdAgZHUCehaLb0LD3RULKDOAwXGUSigrkQCrrE3FJUC6lp44P0O5KVWQL98GhPwVn/qsrMx5QJ6joACr/x0c09BBRTg21MjBHROQIEXJon4vRflAuo1UOBtbh1Q78ID73TjgDoPFHiraSFuFVBXIgFvdt9HoMtcCijQ1G0D6tOYgHe7c0B33vj83bMvmgIf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" width="672" /></p>
-<p>Note that the <code>echo = FALSE</code> parameter was added to the
-code chunk to prevent printing of the R code that generated the
-plot.</p>
+<div id="bring-in-the-vcf-gff-and-reference-genome-fasta-data" class="section level2">
+<h2>Bring in the vcf, gff, and reference genome (FASTA) data</h2>
+<p>Note that Rmarkdown does not use setwd() so it’s best practice to
+include the paths explicitly in your code. This can be made easier by
+setting the root of the directory to a variable (path) and then adding
+that to the data imports.</p>
+<pre class="r"><code>datapath=&quot;/netfiles/ecogen/PopulationGenomics/&quot;
+dna &lt;- ape::read.dna(paste0(datapath,&quot;reference/GCA_030169165.1_ASM3016916v1_genomic.fa.gz&quot;), format = &quot;fasta&quot;)
+gff &lt;- read.table(paste0(datapath,&quot;reference/GCA_030169165.1_ASM3016916v1_genomic_genes.gff.gz&quot;), sep=&quot;\t&quot;, quote=&quot;&quot;)</code></pre>
+<p>Bring in vcf data and subset for chr1</p>
+<pre class="r"><code>vcf1 &lt;- read.vcfR(paste0(datapath,&quot;variants/Centaurea_Allsamples_Csols_bcftools_poly_mac5_sitemiss50pct_indvmiss_75pct_CM058040.1.recode.vcf.gz&quot;))</code></pre>
+<pre><code>## Scanning file to determine attributes.
+## File attributes:
+##   meta lines: 1106
+##   header_line: 1107
+##   variant count: 2665
+##   column count: 638
+## Meta line 1000 read in.Meta line 1106 read in.
+## All meta lines processed.
+## gt matrix initialized.
+## Character matrix gt created.
+##   Character matrix gt rows: 2665
+##   Character matrix gt cols: 638
+##   skip: 0
+##   nrows: 2665
+##   row_num: 0
+## Processed variant 1000Processed variant 2000Processed variant: 2665
+## All variants processed</code></pre>
+<pre class="r"><code>dna1 &lt;- dna[grep( &quot;CM058040.1&quot;, names(dna) ) ]
+names(dna1) &lt;- &quot;CM058040.1&quot;
+dna1 &lt;- as.matrix(dna1)
+
+gff1 &lt;- gff[grep(&quot;CM058040.1&quot;, gff[,1]),]</code></pre>
+<p>Or chr2</p>
+<pre class="r"><code>vcf2 &lt;- read.vcfR(paste0(datapath,&quot;variants/Centaurea_Allsamples_Csols_bcftools_poly_mac5_sitemiss50pct_indvmiss_75pct_CM058041.1.recode.vcf.gz&quot;))</code></pre>
+<pre><code>## Scanning file to determine attributes.
+## File attributes:
+##   meta lines: 1106
+##   header_line: 1107
+##   variant count: 2663
+##   column count: 638
+## Meta line 1000 read in.Meta line 1106 read in.
+## All meta lines processed.
+## gt matrix initialized.
+## Character matrix gt created.
+##   Character matrix gt rows: 2663
+##   Character matrix gt cols: 638
+##   skip: 0
+##   nrows: 2663
+##   row_num: 0
+## Processed variant 1000Processed variant 2000Processed variant: 2663
+## All variants processed</code></pre>
+<pre class="r"><code>dna2 &lt;- dna[grep( &quot;CM058041.1&quot;, names(dna) ) ]
+names(dna2) &lt;- &quot;CM058041.1&quot;
+dna2 &lt;- as.matrix(dna2)
+
+gff2 &lt;- gff[grep(&quot;CM058041.1&quot;, gff[,1]),]</code></pre>
+</div>
+<div id="create-a-chromr-object" class="section level2">
+<h2>Create a chromR object:</h2>
+<pre class="r"><code>chrom1 &lt;- create.chromR(name=&quot;Chr1&quot;, vcf=vcf1, seq=dna1, ann=gff1, verbose=TRUE)</code></pre>
+<pre><code>## Names in vcf:</code></pre>
+<pre><code>##   CM058040.1</code></pre>
+<pre><code>## Names of sequences:</code></pre>
+<pre><code>##   CM058040.1</code></pre>
+<pre><code>## Names in annotation:</code></pre>
+<pre><code>##   CM058040.1</code></pre>
+<pre><code>## Initializing var.info slot.</code></pre>
+<pre><code>## var.info slot initialized.</code></pre>
+<pre class="r"><code>chrom1</code></pre>
+<pre><code>## *****   Class chromR, method Show   *****
+## Name: Chr1 
+## Chromosome length: 110,803,994 bp
+##   Chromosome labels: CM058040.1
+## Annotation (@ann) count: 58,793 
+##   Annotation chromosome names: CM058040.1
+## Variant (@vcf) count: 2,665 
+##   Variant (@vcf) chromosome names: CM058040.1
+## Object size: 142.9 Mb
+## Use head(object) for more details.
+## *****      End Show (chromR)        *****</code></pre>
+<pre class="r"><code>plot(chrom1)</code></pre>
+<p><img src="test_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>or, looking at just chr2 now…</p>
+<pre class="r"><code>chrom2 &lt;- create.chromR(name=&quot;Chr2&quot;, vcf=vcf2, seq=dna2, ann=gff2, verbose=TRUE)</code></pre>
+<pre><code>## Names in vcf:</code></pre>
+<pre><code>##   CM058041.1</code></pre>
+<pre><code>## Names of sequences:</code></pre>
+<pre><code>##   CM058041.1</code></pre>
+<pre><code>## Names in annotation:</code></pre>
+<pre><code>##   CM058041.1</code></pre>
+<pre><code>## Initializing var.info slot.</code></pre>
+<pre><code>## var.info slot initialized.</code></pre>
+<pre class="r"><code>chrom2</code></pre>
+<pre><code>## *****   Class chromR, method Show   *****
+## Name: Chr2 
+## Chromosome length: 107,929,999 bp
+##   Chromosome labels: CM058041.1
+## Annotation (@ann) count: 60,813 
+##   Annotation chromosome names: CM058041.1
+## Variant (@vcf) count: 2,663 
+##   Variant (@vcf) chromosome names: CM058041.1
+## Object size: 141 Mb
+## Use head(object) for more details.
+## *****      End Show (chromR)        *****</code></pre>
+<pre class="r"><code>plot(chrom2)</code></pre>
+<p><img src="test_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre><code>## Nucleotide regions complete.</code></pre>
+<pre><code>##   elapsed time:  41.92</code></pre>
+<pre><code>## N regions complete.</code></pre>
+<pre><code>##   elapsed time:  43.452</code></pre>
+<pre><code>## Population summary complete.</code></pre>
+<pre><code>##   elapsed time:  1.478</code></pre>
+<pre><code>## window_init complete.</code></pre>
+<pre><code>##   elapsed time:  0.004</code></pre>
+<pre><code>## windowize_fasta complete.</code></pre>
+<pre><code>##   elapsed time:  14.524</code></pre>
+<pre><code>## windowize_annotations complete.</code></pre>
+<pre><code>##   elapsed time:  2.298</code></pre>
+<pre><code>## windowize_variants complete.</code></pre>
+<pre><code>##   elapsed time:  0.003</code></pre>
+<p><img src="test_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+<!--head(chrom@var.info)
+
+
+<!--queryMETA(vcf, element = 'FORMAT.+DP')
+
+<!--plot(chrom@var.info$DP,chrom@var.info$He)
+
+
+<!--vcf@gt[1:4,1:4]
+
+<!-- dp <- extract.gt(vcf, element = "DP", as.numeric=TRUE) -->
+<!-- dim(dp) --></p>
+<!-- myMiss <- apply(dp, MARGIN = 2, function(x){ sum(is.na(x)) }) -->
+<!-- myMiss <- myMiss/nrow(vcf) -->
+<!-- library(RColorBrewer) -->
+<!-- palette(brewer.pal(n=12, name = 'Set3')) -->
+<!-- par(mar = c(12,4,4,2)) -->
+<!-- barplot(myMiss, las = 2, col = 1:100) -->
+<!-- title(ylab = "Missingness (%)") -->
 </div>
 
 
