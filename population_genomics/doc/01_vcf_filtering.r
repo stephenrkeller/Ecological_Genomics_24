@@ -1,6 +1,6 @@
 # load libraries
 library(vcfR)
-library(ggplot2)
+#library(ggplot2)
 
 # set wd to PopulationGenomics folder on gpfs1 class drive
 
@@ -42,57 +42,179 @@ dev.off()
 
 
 # Mask poor quality variants
-chr1_masked <- masker(chr1,
-                      min_QUAL=50,
-                      min_DP=1000,
-                      max_DP=10000,
-                      min_MQ=30)
-
-plot(chr1_masked)
-chromoqc(chr1_masked, xlim=c(1e1, 1.1e8))
-
-# Now process the chromR object with proc.chromR
-# The default window size = 1000bp, can set with win.size
-chr1_proc <- proc.chromR(chr1_masked, win.size = 1e5)
-plot(chr1_proc)
-chromoqc(chr1_proc, xlim=c(1e1, 1.1e8))
+# chr1_masked <- masker(chr1,
+#                       min_QUAL=50,
+#                       min_DP=1000,
+#                       max_DP=10000,
+#                       min_MQ=30)
+# 
+# plot(chr1_masked)
+# chromoqc(chr1_masked, xlim=c(1e1, 1.1e8))
+# 
+# # Now process the chromR object with proc.chromR
+# # The default window size = 1000bp, can set with win.size
+# chr1_proc <- proc.chromR(chr1_masked, win.size = 1e5)
+# plot(chr1_proc)
+# chromoqc(chr1_proc, xlim=c(1e1, 1.1e8))
 
 #head(chr1_masked) # see an overview of each list element
 
+####### Left off here last time #######
 
 #How to filter a vcf file for minDP
-dp <- extract.gt(vcf, 
+DP <- extract.gt(vcf, 
                  element="DP", 
                  as.numeric=T, 
                  convertNA=T)
-quantile(dp)
+quantile(DP)
 
-dp[dp==0] <- NA
+DP[DP==0] <- NA. #set the 0 depth genos to `NA`
 
-quantile(dp, na.rm=T)
+quantile(DP, na.rm=T) # much better
+
+dim(DP) # ensure loci are in rows; samples in columns
+
+#Let's look at mean DP per individual...
+# avgDP = colMeans(DP, na.rm=T)
+# summary(avgDP)
+# hist(avgDP, breaks=50) 
+# mean is ~24X, range from 2.8-171X.  
+# Pretty good! Ideeally want avg of 15-20X/ind
+
+#What about missingness? We can use the heatmap function:
 
 #pdf(file="~/courses/Ecological_Genomics_24/population_genomics/figures/chromoPlot_chr1.pdf")
-heatmap.bp(dp[1:1000,], rlabels=F, clabels=F)
+heatmap.bp(DP[1:5000,], rlabels=F, clabels=F)
 #dev.off()
 
-vcf@gt[,-1][is.na(dp)==TRUE] <- NA
+# set individual genotypes with DP<X to `NA`
+# not needed with SNPfiltR??
+#vcf@gt[,-1][is.na(DP)==TRUE] <- NA 
 
-indMiss <- apply(dp, MARGIN = 2, function(x){ sum(is.na(x)) })
-indMiss <- indMiss/nrow(vcf@gt)
-hist(indMiss)
-quantile(indMiss)
+vcf # check to see % missing data -- 25.3% if DP==0 <- NA
+
+# Now that we see the data attribtues, let's start filtering 
+library(SNPfiltR)
+
+meta <- read.csv("metadata/meta4vcf.txt, header=T")
+head(meta)
+meta2=meta[,c(1,4)]
+names(meta2) = c("id","pop")
+
+# Look at mean depth per ind
+hard_filter(vcf)
+vcf.filt <- hard_filter(vcf, 
+                        depth=3) #What's reasonable while keeping variants?
+
+# Look at allele balance (note these are autotetratploid...0.25, 0.5, 0.75)
+vcf.filt <- filter_allele_balance(vcf.filt,
+                                  min.ratio = 0.15,
+                                  max.ratio=0.85)
+
+vcf.filt <- max_depth(vcf.filt, 
+                      maxdepth=60) # generally set filter to 2X mean depth 
+
+# start with no cutoff for exploratory, 
+# then add cuttoff=0.8 or 0.75 (N=36 sammples)
+
+vcf.filt.indMiss <- missing_by_sample(vcf.filt, 
+                  popmap = meta,
+                  cutoff=0.8) 
+#subset popmap to only include retained individuals
+meta <- meta[meta$id %in% colnames(vcf.filt.indMiss@gt),]
+
+# gets rid of monomrophic or multi-allelic sites
+vcf.filt.indMiss <- filter_biallelic(vcf.filt.indMiss) 
+
+
+# use PCA to verify that missingngess is not driving clustering
+# maybe try just 1 or 2 threholds at first...note that lower is more permissive
+# didn't work for me on the VACC-OOD!
+#library(adgenet)
+#missPCA <- assess_missing_data_pca(vcfR=vcf.filt.indMiss, 
+                              #popmap = meta, 
+                              #thresholds = 0.5, 
+                              #clustering = FALSE)
+
+#Filter out by SNP missingness -- higher cuttoff is more stringent
+vcf.filt.indSNPMiss <- missing_by_snp(vcf.filt.indMiss, 
+                                      cutoff=0.5)
+
+vcf.filt.indSNPMiss <- min_mac(vcf.filt.indSNPMiss,
+                               min.mac=2)
+
+#assess clustering without MAC cutoff
+#miss<-assess_missing_data_tsne(vcf.filt.indSNPMiss, 
+                              # popmap=meta, 
+                               #clustering = FALSE)
+
+DP2 <- extract.gt(vcf.filt.indSNPMiss, 
+                 element="DP", 
+                 as.numeric=T, 
+                 convertNA=T)
+
+
+heatmap.bp(DP2[1:5000,], rlabels=F, clabels=F)
+
+vcfR::write.vcf(vcf.filt.indSNPMiss, 
+                "~/myrepo/outputs/Centaurea_finalfiltered.vcf.gz")
+
+# Can also thin for LD:
+
+vcf.filt.indSNPMiss.thin <- distance_thin(vcf.filt.indSNPMiss,
+                                          min.distance=500)
+
+vcfR::write.vcf(vcf.filt.indSNPMiss.thin, 
+                "~/myrepo/outputs/Centaurea_finalfiltered_thinned.vcf.gz")
+
+mydiff <- vcfR::genetic_diff(vcf.filt.indSNPMiss,
+                             pops=as.factor(meta$region),
+                             method="nei")
+
+#if there are still problematic samples, drop them using the following syntax
+#vcfR <- vcfR[,colnames(vcfR@gt) != "mysampleID" & colnames(vcfR@gt) != "mysampleID2"]
+
+
+
+
+
+#### Below is optional, depending if SNPfiltR poackage works
+
+#optional if class wants to filter:
+#DP[DP<3 <- NA]
+
+vcf@gt[,-1][is.na(DP)==TRUE] <- NA # set individual genotypes with DP<X to `NA`
+
+DP.filtered <- extract.gt(vcf, 
+                 element="DP", 
+                 as.numeric=T, 
+                 convertNA=T)
+
+quantile(DP.filtered, na.rm=T) # good -- our DP filtering step worked (min=3)
+
+#Now, calculate how many missing (NA) genos per individual
+indMiss <- apply(DP, 
+                 MARGIN = 2, 
+                 function(x){ sum(is.na(x)) })
+
+indMissProp <- indMiss/nrow(vcf@gt) #make a proportion
+
+hist(indMissProp)
+summary(indMissProp)
 
 siteMiss <- apply(dp, MARGIN = 1, function(x){ sum(is.na(x)) })
 siteMiss <- siteMiss/ncol(vcf@gt)
 hist(siteMiss)
 
-vcf@gt = vcf@gt[,c(TRUE, indMiss < 0.5)]
+vcf2 = vcf 
 
-vcf
+vcf2@gt = vcf2@gt[,c(TRUE, indMiss < 0.7)]
+
+vcf2
 
 #vcf = vcf[siteMiss < 0.25,]
 
-dp2 <- extract.gt(vcf, 
+dp2 <- extract.gt(vcf2, 
                  element="DP", 
                  as.numeric=T, 
                  convertNA=T)
@@ -100,20 +222,20 @@ dp2[dp2==0] <- NA
 quantile(dp2, na.rm=T)
 
 siteMiss <- apply(dp2, MARGIN = 1, function(x){ sum(is.na(x)) })
-siteMiss <- siteMiss/ncol(vcf@gt)
+siteMiss <- siteMiss/ncol(vcf2@gt)
 hist(siteMiss)
 quantile(siteMiss)
 
-vcf
-
 heatmap.bp(dp2[1:1000,], rlabels=F, clabels=F)
 
-#the third is the count and fourth the frequency.
-vcf_maf <- as.data.frame(maf(vcf, element=2)) 
-# element=2 returns info on the minor allele
-hist(vcf_maf$Frequency, breaks=50)
+vcf2 = vcf2[siteMiss < 0.25,]
 
-write.vcf(vcf, "~/test.vcf.gz")
+#the third is the count and fourth the frequency.
+#vcf_maf <- as.data.frame(maf(vcf, element=2)) 
+# element=2 returns info on the minor allele
+#hist(vcf_maf$Frequency, breaks=50)
+
+write.vcf(vcf2, "~/test.vcf.gz")
 
 
 # indDP <- colMeans(dp2)
