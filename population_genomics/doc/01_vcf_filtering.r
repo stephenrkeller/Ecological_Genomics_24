@@ -86,32 +86,35 @@ siteMiss <- apply(dp, MARGIN = 1, function(x){ sum(is.na(x)) })
 siteMiss <- siteMiss/ncol(vcf@gt)
 hist(siteMiss)
 
-vcf@gt = vcf@gt[,c(TRUE, indMiss < 0.5)]
+vcf2 = vcf
 
-vcf
+vcf2@gt = vcf2@gt[,c(TRUE, indMiss < 0.7)]
 
-#vcf = vcf[siteMiss < 0.25,]
+vcf2
 
-dp2 <- extract.gt(vcf, 
-                 element="DP", 
-                 as.numeric=T, 
-                 convertNA=T)
-dp2[dp2==0] <- NA
-quantile(dp2, na.rm=T)
-
-siteMiss <- apply(dp2, MARGIN = 1, function(x){ sum(is.na(x)) })
+siteMiss <- apply(dp, MARGIN = 1, function(x){ sum(is.na(x)) })
 siteMiss <- siteMiss/ncol(vcf@gt)
 hist(siteMiss)
-quantile(siteMiss)
 
-vcf
+vcf2 = vcf2[siteMiss < 0.25,]
+
+vcf2
 
 heatmap.bp(dp2[1:1000,], rlabels=F, clabels=F)
 
 #the third is the count and fourth the frequency.
-vcf_maf <- as.data.frame(maf(vcf, element=2)) 
+vcf2_maf <- as.data.frame(maf(vcf2, element=2)) 
 # element=2 returns info on the minor allele
-hist(vcf_maf$Frequency, breaks=50)
+hist(vcf2_maf$Frequency, breaks=50)
+
+quantile(vcf2_maf$Frequency)
+
+vcf3 = vcf2
+
+vcf3_maf <- maf(vcf2, element=2)
+
+vcf3 = vcf3[which(vcf3_maf$Frequency>0.05),]
+
 
 write.vcf(vcf, "~/test.vcf.gz")
 
