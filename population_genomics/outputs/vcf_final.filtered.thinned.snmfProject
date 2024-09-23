@@ -1,0 +1,14 @@
+new("snmfProject", snmfProject.file = "vcf_final.filtered.thinned.snmfProject", 
+    projDir = "/gpfs1/home/s/r/srkeller/courses/Ecological_Genomics_24/population_genomics/outputs/", 
+    snmfDir = "vcf_final.filtered.thinned.snmf/", input.file = "vcf_final.filtered.thinned.geno", 
+    runs = list(), K = c(1L, 2L, 3L, 4L, 5L, 1L, 2L, 3L, 4L, 
+    5L, 1L, 2L, 3L, 4L, 5L), snmfClass.files = c("K1/run1/vcf_final.filtered.thinned_r1.1.snmfClass", 
+    "K2/run1/vcf_final.filtered.thinned_r1.2.snmfClass", "K3/run1/vcf_final.filtered.thinned_r1.3.snmfClass", 
+    "K4/run1/vcf_final.filtered.thinned_r1.4.snmfClass", "K5/run1/vcf_final.filtered.thinned_r1.5.snmfClass", 
+    "K1/run2/vcf_final.filtered.thinned_r2.1.snmfClass", "K2/run2/vcf_final.filtered.thinned_r2.2.snmfClass", 
+    "K3/run2/vcf_final.filtered.thinned_r2.3.snmfClass", "K4/run2/vcf_final.filtered.thinned_r2.4.snmfClass", 
+    "K5/run2/vcf_final.filtered.thinned_r2.5.snmfClass", "K1/run3/vcf_final.filtered.thinned_r3.1.snmfClass", 
+    "K2/run3/vcf_final.filtered.thinned_r3.2.snmfClass", "K3/run3/vcf_final.filtered.thinned_r3.3.snmfClass", 
+    "K4/run3/vcf_final.filtered.thinned_r3.4.snmfClass", "K5/run3/vcf_final.filtered.thinned_r3.5.snmfClass"
+    ), n = 595L, L = 3656L, creationTime = structure(1727122425.32232, class = c("POSIXct", 
+    "POSIXt")))
