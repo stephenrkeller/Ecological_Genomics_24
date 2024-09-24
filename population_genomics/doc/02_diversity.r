@@ -40,6 +40,8 @@ plot(mydiff.chr1$POS,mydiff.chr1$Ht,
 
 library(PopGenome)
 
+setwd("/gpfs1/cl/pbio3990/PopulationGenomics/")
+
 dat <- readVCF("variants/Centaurea_filtered.vcf.gz", 
                numcols=20000,
                tid="CM058040.1",
@@ -83,6 +85,16 @@ length(genes@region.names)
 
 genediv = diversity.stats(genes)
 hist(genediv@nuc.diversity.within[genediv@nuc.diversity.within!=0]/genediv@n.sites[genediv@nuc.diversity.within!=0],xlim=c(0,0.0005),breaks=500)
+
+gene.neut = neutrality.stats(genes)
+
+plot(gene.neut@n.segregating.sites, 
+     pch=21, 
+     col="blue", 
+     cex=0.7,
+     xlab="Chromosome 1 window (10 kb)",
+     ylab="Nucleotide diversity (per-site)")
+
 
 genediv2 = neutrality.stats(genes)
 plot(genediv2@SLIDE.POS,genediv2@Tajima.D)

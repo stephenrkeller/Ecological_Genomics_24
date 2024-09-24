@@ -6,6 +6,10 @@ library(tidyverse)
 X11.options(type="cairo")
 #options(bitmapType = "cairo")
 
+source("http://membres-timc.imag.fr/Olivier.Francois/Conversion.R")
+source("http://membres-timc.imag.fr/Olivier.Francois/POPSutilities.R")
+
+
 list.files("~/projects/eco_genomics/population_genomics/outputs/")
 list.files("~/courses/Ecological_Genomics_24/population_genomics/outputs/")
 
