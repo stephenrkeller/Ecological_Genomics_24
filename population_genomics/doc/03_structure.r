@@ -4,7 +4,7 @@ library(SNPfiltR)
 library(tidyverse)
 
 X11.options(type="cairo")
-#options(bitmapType = "cairo")
+options(bitmapType = "cairo")
 
 source("http://membres-timc.imag.fr/Olivier.Francois/Conversion.R")
 source("http://membres-timc.imag.fr/Olivier.Francois/POPSutilities.R")
@@ -39,6 +39,8 @@ mygenothinned <- vcf2geno(input.file="/gpfs1/home/s/r/srkeller/temp_dat/vcf_fina
 # This will make a PCA project with the same name as the input file with extension .pca
 CentPCA <- LEA::pca("outputs/vcf_final.filtered.thinned.geno", scale=TRUE)
 
+CentPCA <- load.pcaProject("vcf_final.filtered.thinned.pcaProject")
+
 show(CentPCA)
 
 # Tracy Widon test -- basically out to PC 37 or so is significant...
@@ -64,10 +66,12 @@ dev.off()
 # Try smnf clustering
 
 CentAdmix = snmf("outputs/vcf_final.filtered.thinned.geno", 
-               K=1:5, 
+               K=1:10, 
                entropy=T, 
                repetitions=3,
-               project="new")
+               project="continue")
+
+CentAdmix = load.snmfProject("outputs/vcf_final.filtered.thinned.snmfProject")
 
 plot(CentAdmix, col="blue4",cex=1.5,pch=19)
 
@@ -82,7 +86,7 @@ myKQmeta = cbind(myKQ, meta2)
 
 myKQmeta = as_tibble(myKQmeta) %>%
   group_by(continent) %>%
-  arrange(levels=region, .by_group=TRUE)
+  arrange(region,pop, .by_group=TRUE)
 
 my.colors <- c("blue4","gold","tomato","lightblue","olivedrab")
 
@@ -96,8 +100,8 @@ barplot(as.matrix(t(myKQmeta[,1:myK])),
         main = paste0("Ancestry matrix K=",myK),
         cex.names=0.7)
 axis(1, 
-     at=1:length(myKQmeta$region),
-     labels=myKQmeta$region,
+     at=1:length(myKQmeta$pop),
+     labels=myKQmeta$pop,
      tick=F,
      las=3)
 dev.off()
@@ -143,3 +147,49 @@ axis(1,
      las=3,
      srt=45,
      cex.axis=.7)
+###############################
+
+library(pcadapt)
+
+vcf.thin <- read.pcadapt("/gpfs1/home/s/r/srkeller/courses/Ecological_Genomics_24/population_genomics/outputs/vcf_final.filtered.thinned.lfmm",
+                         type="lfmm")
+
+pcadapt.pca = pcadapt(vcf.thin, K=20)
+
+plot(pcadapt.pca, option="screeplot")
+
+poplist.names = meta2$region
+poplist.names = meta2$continent
+
+plot(pcadapt.pca, option="scores", 
+     pop=poplist.names,
+     i=1,j=2)
+
+# To get selection test, choose most likely value of K and re-calc pca
+pcadapt.pca = pcadapt(vcf.thin, K=3)
+summary(pcadapt.pca)
+
+
+plot(pcadapt.pca, option="manhattan")
+plot(pcadapt.pca, option="qqplot")
+
+hist(pcadapt.pca$pvalues, breaks=50, col="gold", xlab="p-values")
+
+plot(pcadapt.pca$loadings[,3])
+
+# component-wise runs for each pc separately
+
+pcadapt.pca = pcadapt(vcf.thin, K=3, method="componentwise")
+summary(pcadapt.pca)
+
+
+plot(pcadapt.pca, option="manhattan", K=3)
+plot(pcadapt.pca, option="qqplot")
+
+hist(pcadapt.pca$pvalues, breaks=50, col="gold", xlab="p-values")
+
+plot(pcadapt.pca$loadings[,3])
+
+
+
+
