@@ -3,7 +3,7 @@ library(LEA)
 library(SNPfiltR)
 library(tidyverse)
 
-X11.options(type="cairo")
+#X11.options(type="cairo")
 options(bitmapType = "cairo")
 
 source("http://membres-timc.imag.fr/Olivier.Francois/Conversion.R")
@@ -37,31 +37,40 @@ mygenothinned <- vcf2geno(input.file="/gpfs1/home/s/r/srkeller/temp_dat/vcf_fina
                    output.file="outputs/vcf_final.filtered.thinned2.geno")
 
 # This will make a PCA project with the same name as the input file with extension .pca
-CentPCA <- LEA::pca("outputs/vcf_final.filtered.thinned.geno", scale=TRUE)
+
+#CentPCA <- LEA::pca("outputs/vcf_final.filtered.thinned.geno", scale=TRUE)
 
 CentPCA <- load.pcaProject("vcf_final.filtered.thinned.pcaProject")
 
 show(CentPCA)
 
-# Tracy Widon test -- basically out to PC 37 or so is significant...
-tw = tracy.widom(CentPCA)
-tw$percentage[1:5]
+# # Tracy Widon test -- basically out to PC 37 or so is significant...
+# tw = tracy.widom(CentPCA)
+# tw$percentage[1:5]
   
-pdf("figures/PCA_3.6KSNPs.pdf")
-# Make the PCA plot
-plot(CentPCA$projections,
-     pch=21,lwd=1.5,
-     col=as.factor(meta2$region),
-     xlab="Genetic PC1 (2.3%)",
-     ylab="Genetic PC2 (1.1%)",
-     main="PCA of Centaurea 3.6K SNPs")
-# add the legend in
-legend("bottomright", 
-       legend=as.factor(unique(meta2$region)),
-       fill=as.factor(unique(meta2$region)))
-# Turn the pdf writer off
-dev.off()
+# pdf("figures/PCA_3.6KSNPs.pdf")
+# # Make the PCA plot
+# plot(CentPCA$projections,
+#      pch=21,lwd=1.5,
+#      col=as.factor(meta2$region),
+#      xlab="Genetic PC1 (2.3%)",
+#      ylab="Genetic PC2 (1.1%)",
+#      main="PCA of Centaurea 3.6K SNPs")
+# # add the legend in
+# legend("bottomright", 
+#        legend=as.factor(unique(meta2$region)),
+#        fill=as.factor(unique(meta2$region)))
+# # Turn the pdf writer off
+# dev.off()
 
+# ggplot
+
+ggplot(as.data.frame(CentPCA$projections), 
+       aes(x=V1, y=V2, color=meta2$region, shape=meta2$cont)) +
+  geom_point(alpha=0.99) +
+  labs(title="Centaurea genetic PCA", x="PC1", y="PC2", color="Regions", shape="Continent")
+
+ggsave("~/courses/Ecological_Genomics_24/population_genomics/figures/CentPCA.pdf")
 
 # Try smnf clustering
 
@@ -84,11 +93,12 @@ best=which.min(CE)
 myKQ = Q(CentAdmix, K=myK, run=best)
 myKQmeta = cbind(myKQ, meta2)
 
+# Optional -- if want to sort by certain grouping criteria
 myKQmeta = as_tibble(myKQmeta) %>%
   group_by(continent) %>%
   arrange(region,pop, .by_group=TRUE)
 
-my.colors <- c("blue4","gold","tomato","lightblue","olivedrab")
+my.colors <- c("blue4","gold","tomato","lightblue","olivedrab","brown")
 
 pdf("figures/Admixture_thinned_K4.pdf", height=4, width=10)
 barplot(as.matrix(t(myKQmeta[,1:myK])), 
@@ -97,13 +107,13 @@ barplot(as.matrix(t(myKQmeta[,1:myK])),
         col=my.colors[1:myK],
         xlab="Geographic regions",
         ylab="Ancestry proportions",
-        main = paste0("Ancestry matrix K=",myK),
-        cex.names=0.7)
+        main = paste0("Ancestry matrix K=",myK))
 axis(1, 
-     at=1:length(myKQmeta$pop),
-     labels=myKQmeta$pop,
+     at=1:length(myKQmeta$region),
+     labels=myKQmeta$region,
      tick=F,
-     las=3)
+     las=3,
+     cex.axis=0.5)
 dev.off()
 
 
@@ -119,13 +129,13 @@ for(i in seq(2,4,1)) {
         space=0,
         col=my.colors[1:myK],
         ylab="Ancestry proportions",
-        main = paste0("Ancestry matrix K=",myK),
-        cex.names=0.7)
+        main = paste0("Ancestry matrix K=",myK))
 axis(1, 
      at=1:length(meta2$region),
      labels=meta2$region,
      tick=F,
-     las=3)
+     las=3,
+     cex.axis=0.5)
 }
 
 dev.off()
@@ -154,41 +164,53 @@ library(pcadapt)
 vcf.thin <- read.pcadapt("/gpfs1/home/s/r/srkeller/courses/Ecological_Genomics_24/population_genomics/outputs/vcf_final.filtered.thinned.lfmm",
                          type="lfmm")
 
-pcadapt.pca = pcadapt(vcf.thin, K=20)
+vcf.thin <- read.pcadapt("/gpfs1/home/s/r/srkeller/vcf_final.filtered.thinned.vcf",
+                         type="vcf")
 
-plot(pcadapt.pca, option="screeplot")
+
+pcadapt.pca = pcadapt(vcf.thin,
+                      min.maf=0.01,
+                      K=2,
+                      LD.clumping = list(size=500, thr=0.2))
+
 
 poplist.names = meta2$region
-poplist.names = meta2$continent
 
 plot(pcadapt.pca, option="scores", 
      pop=poplist.names,
      i=1,j=2)
 
-# To get selection test, choose most likely value of K and re-calc pca
-pcadapt.pca = pcadapt(vcf.thin, K=3)
-summary(pcadapt.pca)
+# To get selection test, choose most likely value of K you want to
+# test for selection and re-calc pca
 
+pcadapt.pca = pcadapt(vcf.thin, 
+                      K=2)
+
+summary(pcadapt.pca)
 
 plot(pcadapt.pca, option="manhattan")
 plot(pcadapt.pca, option="qqplot")
 
 hist(pcadapt.pca$pvalues, breaks=50, col="gold", xlab="p-values")
 
-plot(pcadapt.pca$loadings[,3])
+padj = p.adjust(pcadapt.pca$pvalues, method="BH")
+hist(padj, breaks=50, xlim=c(0,0.5),ylim=c(0,200))
+
+outliers = which(padj < 0.05) # FDR
+length(outliers) # 189 selection outliers
+
+# which PCs are the outliers associated with?
+get.pc(pcadapt.pca,outliers)
+
+plot(pcadapt.pca$loadings[,2]) # for PC1 SNP loadings
 
 # component-wise runs for each pc separately
 
-pcadapt.pca = pcadapt(vcf.thin, K=3, method="componentwise")
+pcadapt.pca = pcadapt(vcf.thin, 
+                      K=2, 
+                      method="componentwise")
 summary(pcadapt.pca)
 
-
-plot(pcadapt.pca, option="manhattan", K=3)
-plot(pcadapt.pca, option="qqplot")
-
-hist(pcadapt.pca$pvalues, breaks=50, col="gold", xlab="p-values")
-
-plot(pcadapt.pca$loadings[,3])
 
 
 
