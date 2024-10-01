@@ -41,10 +41,8 @@ plot(pcadapt.pca, K=1, option="qqplot")
 plot(pcadapt.pca, K=2, option="qqplot")
 
 #plot(pcadapt.pca, option="manhattan")
-
-hist(pcadapt.pca$pvalues, breaks=50, col="gold", 
-     xlab="p-values")
-
+#hist(pcadapt.pca$pvalues, breaks=50, col="gold", 
+#     xlab="p-values")
 #plot(pcadapt.pca$loadings[,2]) # for PC1 SNP loadings
 
 
@@ -59,8 +57,7 @@ chrnum <- as.data.frame(cbind(chr.main, seq(1, 8, 1)))
 
 # And finally merge these numerically named chromosomes with the full diversity results:
 Pval <- pcadapt.pca$pvalues
-Qval <- p.adjust(pcadapt.pca$pvalues, method="BH")
-
+#Qval <- p.adjust(pcadapt.pca$pvalues, method="BH")
 
 pcadapt.MHplot <- cbind(vcfR.fix,Pval)
 
@@ -93,7 +90,7 @@ manhattan(pcadapt.MHplot,
           logp=T,
           ylab="-log10 p-value",
           genomewideline = F,
-#          suggestiveline = quantPC1,
+#          suggestiveline = -log10(quantPC1),
           main="PCAdapt genome scan for selection (PC1)")
 
 manhattan(pcadapt.MHplot,
@@ -105,7 +102,7 @@ manhattan(pcadapt.MHplot,
           logp=T,
           ylab="-log10 p-value",
           genomewideline = F,
-#          suggestiveline = quantPC2,
+#          suggestiveline = -log10(quantPC2),
           main="PCAdapt genome scan for selection (PC2)")
 
 dev.off()
@@ -114,19 +111,17 @@ dev.off()
 pcadapt.MHplot$padjPC1 = p.adjust(pcadapt.MHplot$pPC1, method="BH")
 pcadapt.MHplot$padjPC2 = p.adjust(pcadapt.MHplot$pPC2, method="BH")
 
-quantPC1 = -log10(quantile(pcadapt.MHplot$padjPC1, 0.001))
-quantPC2 = -log10(quantile(pcadapt.MHplot$padjPC1, 0.001))
+quantPC1 = quantile(pcadapt.MHplot$padjPC1, 0.001)
+quantPC2 = quantile(pcadapt.MHplot$padjPC1, 0.001)
 
 View(pcadapt.MHplot %>%
-       filter(pPC1<0.0001, V2==1) %>%
+       filter(padjPC1<quantPC1, V2==1) %>%
        select(chr.main, POS, padjPC1))
 
 View(pcadapt.MHplot %>%
-  filter(pPC2<0.0001, V2==4) %>%
+  filter(padjPC2<quantPC2, V2==4) %>%
   select(chr.main, POS, padjPC2))
 
-
-#poplist.names = meta2$region
 
 
 ############  below is non-componentwise pcadapt
