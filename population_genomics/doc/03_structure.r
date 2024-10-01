@@ -23,7 +23,7 @@ vcf.thin = distance_thin(vcf, min.distance=500)
 meta <- read.csv("/gpfs1/cl/pbio3990/PopulationGenomics/metadata/meta4vcf.csv")
 dim(meta) # meta has 629 inds
 
-meta2 <- meta[meta$id %in% colnames(vcf.thin@gt[,-1]),] 
+meta2 <- meta[meta$id %in% colnames(vcf@gt[,-1]),] 
 
 write.vcf(vcf.thin, "outputs/vcf_final.filtered.thinned.vcf.gz")
 
@@ -78,27 +78,35 @@ CentAdmix = snmf("outputs/vcf_final.filtered.thinned.geno",
                K=1:10, 
                entropy=T, 
                repetitions=3,
-               project="continue")
+               project="new")
 
-CentAdmix = load.snmfProject("outputs/vcf_final.filtered.thinned.snmfProject")
+#CentAdmix = load.snmfProject("outputs/vcf_final.filtered.thinned.snmfProject")
 
-plot(CentAdmix, col="blue4",cex=1.5,pch=19)
+par(mfrow=c(1,2))
+plot(CentAdmix, col="blue4",cex=1.5,pch=19, main="SNMF")
+plot(CentPCA$eigenvalues[1:10],col="blue4",cex=1.5,pch=19, 
+     ylab="Eigenvalues",xlab="Principal Components", main="PCA")
+dev.off()
 
 myK=4
   
 CE = cross.entropy(CentAdmix, K=myK)
 
 best=which.min(CE)
+best
 
 myKQ = Q(CentAdmix, K=myK, run=best)
+head(myKQ)
+
 myKQmeta = cbind(myKQ, meta2)
+head(myKQmeta)
+
+my.colors <- c("blue4","gold","tomato","lightblue","olivedrab","brown")
 
 # Optional -- if want to sort by certain grouping criteria
 myKQmeta = as_tibble(myKQmeta) %>%
   group_by(continent) %>%
   arrange(region,pop, .by_group=TRUE)
-
-my.colors <- c("blue4","gold","tomato","lightblue","olivedrab","brown")
 
 pdf("figures/Admixture_thinned_K4.pdf", height=4, width=10)
 barplot(as.matrix(t(myKQmeta[,1:myK])), 
@@ -119,9 +127,10 @@ dev.off()
 
 # multi-K barplot
 pdf("figures/Admixture_thinned_multK.pdf", height=10, width=10)
+
 par(mfrow=c(3,1))
 
-for(i in seq(2,4,1)) {
+for(i in c(2,3,4)) {
   myK=i
   myKQ = Q(CentAdmix, K=myK, run=best)
   barplot(as.matrix(t(myKQ[,1:myK])), 
@@ -140,78 +149,24 @@ axis(1,
 
 dev.off()
 
-###### using LEA::barchart function:
-
-fig <- barchart(CentAdmix,
-         K=myK, run=best,
-         sort.by.Q = F,
-         col=my.colors,
-         lab=meta2$id,
-         border=NA,
-         space=0,
-         ylab="Ancestry proportions",
-         main = "K=4 ancestry matrix")
-axis(1, 
-     at=1:length(meta2$region),
-     labels=meta2$region,
-     las=3,
-     srt=45,
-     cex.axis=.7)
-###############################
-
-library(pcadapt)
-
-vcf.thin <- read.pcadapt("/gpfs1/home/s/r/srkeller/courses/Ecological_Genomics_24/population_genomics/outputs/vcf_final.filtered.thinned.lfmm",
-                         type="lfmm")
-
-vcf.thin <- read.pcadapt("/gpfs1/home/s/r/srkeller/vcf_final.filtered.thinned.vcf",
-                         type="vcf")
-
-
-pcadapt.pca = pcadapt(vcf.thin,
-                      min.maf=0.01,
-                      K=2,
-                      LD.clumping = list(size=500, thr=0.2))
-
-
-poplist.names = meta2$region
-
-plot(pcadapt.pca, option="scores", 
-     pop=poplist.names,
-     i=1,j=2)
-
-# To get selection test, choose most likely value of K you want to
-# test for selection and re-calc pca
-
-pcadapt.pca = pcadapt(vcf.thin, 
-                      K=2)
-
-summary(pcadapt.pca)
-
-plot(pcadapt.pca, option="manhattan")
-plot(pcadapt.pca, option="qqplot")
-
-hist(pcadapt.pca$pvalues, breaks=50, col="gold", xlab="p-values")
-
-padj = p.adjust(pcadapt.pca$pvalues, method="BH")
-hist(padj, breaks=50, xlim=c(0,0.5),ylim=c(0,200))
-
-outliers = which(padj < 0.05) # FDR
-length(outliers) # 189 selection outliers
-
-# which PCs are the outliers associated with?
-get.pc(pcadapt.pca,outliers)
-
-plot(pcadapt.pca$loadings[,2]) # for PC1 SNP loadings
-
-# component-wise runs for each pc separately
-
-pcadapt.pca = pcadapt(vcf.thin, 
-                      K=2, 
-                      method="componentwise")
-summary(pcadapt.pca)
-
-
+# ###### using LEA::barchart function:
+# 
+# fig <- barchart(CentAdmix,
+#          K=myK, run=best,
+#          sort.by.Q = F,
+#          col=my.colors,
+#          lab=meta2$id,
+#          border=NA,
+#          space=0,
+#          ylab="Ancestry proportions",
+#          main = "K=4 ancestry matrix")
+# axis(1, 
+#      at=1:length(meta2$region),
+#      labels=meta2$region,
+#      las=3,
+#      srt=45,
+#      cex.axis=.7)
+# ###############################
 
 
 
